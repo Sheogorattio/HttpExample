@@ -2,6 +2,7 @@
 #include <Winsock2.h>
 #include <ws2tcpip.h>
 
+#include<fstream>
 #include <iostream>
 #include <string>
 using namespace std;
@@ -77,8 +78,13 @@ int main()
     }
 
     //4. HTTP Request
+    cout << "Enter city:\t";
+    string city;
+    cin >> city;
+    char lpszRequest[255];
+    sprintf_s(lpszRequest, "/data/2.5/weather?q=%s&units=metric&appid=75f6e64d49db78658d09cb5ab201e483&mode=JSON", city.c_str());
 
-    string uri = "/data/2.5/weather?q=Odessa&units=metric&appid=75f6e64d49db78658d09cb5ab201e483&mode=JSON";
+    string uri = lpszRequest;
 
     string request = "GET " + uri + " HTTP/1.1\n"; 
     request += "Host: " + string(hostname) + "\n";
@@ -119,58 +125,65 @@ int main()
 
     } while (respLength == BUFFERSIZE);
 
-  //  cout << response << endl;
-    wetherInfo wether;
+    wetherInfo weather;
     int place;
     place = response.rfind("\"id\":", response.size());                          //id
     for (int i = place + sizeof("\"id\":") - 1; response[i] != ','; i++) {
-        wether.id.push_back(response[i]);
+        weather.id.push_back(response[i]);
     }
     place = response.rfind("\"name\":\"", response.size());                     //city
     for (int i = place + sizeof("\"name\":\"") - 1; response[i] != '\"'; i++) {
-        wether.city.push_back(response[i]);
+        weather.city.push_back(response[i]);
     }
     place = response.rfind("\"country\":\"", response.size());                      //country
     for (int i = place + sizeof("\"country\":\"") - 1; response[i] != '\"'; i++) {
-        wether.country.push_back(response[i]);
+        weather.country.push_back(response[i]);
     }
     place = response.find("\"coord\":{", 0);                                        //coord
     for (int i = place + sizeof("\"coord\":{") - 1; response[i] != '\}'; i++) {
-        wether.coord.push_back(response[i]);
+        weather.coord.push_back(response[i]);
     }
     place = response.find("\"temp_min\":", 0);                                      //max/max temperature
     for (int i = place + sizeof("\"temp_min\":") - 1; response[i] != ','; i++) {
-        wether.tempMin.push_back(response[i]);
+        weather.tempMin.push_back(response[i]);
     }
     place = response.find("\"temp_max\":", 0);
     for (int i = place + sizeof("\"temp_max\":") - 1; response[i] != ','; i++) {
-        wether.tempMax.push_back(response[i]);
+        weather.tempMax.push_back(response[i]);
     }
     place = response.find("\"sunrise\":", 0);                                         //sunrise
     for (int i = place + sizeof("\"sunrise\":") - 1; response[i] != ','; i++) {
-        wether.sunrise.push_back(response[i]);
+        weather.sunrise.push_back(response[i]);
     }
     place = response.find("\"sunset\":", 0);                                         //sunset
     for (int i = place + sizeof("\"sunset\":") - 1; response[i] != ','; i++) {
-        wether.sunset.push_back(response[i]);
+        weather.sunset.push_back(response[i]);
     }
 
 
-    //tm* sunset = new tm, *sunrise = new tm;
-    //gmtime_s(sunrise, (time_t*)stol(wether.sunrise));
-    //gmtime_s(sunset, (time_t*)stol(wether.sunset));
 
-    cout << "id:\t\t" << wether.id << endl;
-    cout << "city:\t\t" << wether.city << endl;
-    cout << "country:\t" << wether.country << endl;
-    cout << "coord:\t\t" << wether.coord << endl;
-    cout << "t(min/max):\t" << wether.tempMin << " / " <<wether.tempMax << endl;
-    cout << "sunrise:\t" << stol(wether.sunrise) / 3600 % 24 << ":" << stol(wether.sunrise) / 60 % 60 << endl;
-    cout << "sunset:\t\t" << stol(wether.sunset) / 3600 % 24 << ":" << stol(wether.sunset) / 60 % 60 <<endl;
+    cout << "id:\t\t" << weather.id << endl;
+    cout << "city:\t\t" << weather.city << endl;
+    cout << "country:\t" << weather.country << endl;
+    cout << "coord:\t\t" << weather.coord << endl;
+    cout << "t(min/max):\t" << weather.tempMin << " / " << weather.tempMax << endl;
+    cout << "sunrise:\t" << stol(weather.sunrise) / 3600 % 24 << ":" << stol(weather.sunrise) / 60 % 60 << endl;
+    cout << "sunset:\t\t" << stol(weather.sunset) / 3600 % 24 << ":" << stol(weather.sunset) / 60 % 60 <<endl;
 
 
-
-
+    ofstream ToFile("Weather.txt", ios::app | ios::out);
+    if (ToFile.is_open())
+    {
+        ToFile << "id:\t\t" << weather.id << endl;
+        ToFile << "city:\t\t" << weather.city << endl;
+        ToFile << "country:\t" << weather.country << endl;
+        ToFile << "coord:\t\t" << weather.coord << endl;
+        ToFile << "t(min/max):\t" << weather.tempMin << " / " << weather.tempMax << endl;
+        ToFile << "sunrise:\t" << stol(weather.sunrise) / 3600 % 24 << ":" << stol(weather.sunrise) / 60 % 60 << endl;
+        ToFile << "sunset:\t\t" << stol(weather.sunset) / 3600 % 24 << ":" << stol(weather.sunset) / 60 % 60 << endl;
+        ToFile << "---------------------------------------------------------------\n";
+        ToFile.close();
+    }
 
     //отключает отправку и получение сообщений сокетом
     iResult = shutdown(connectSocket, SD_BOTH);
